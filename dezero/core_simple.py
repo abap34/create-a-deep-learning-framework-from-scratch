@@ -66,7 +66,7 @@ class Variable:
     def backward(self,retaion_grad=False):
         if self.grad is None:
             self.grad = np.ones_like(self.data)
-            print('grad is None. create',self.grad)
+            #print('grad is None. create',self.grad)
         funcs = []
         seen = set()
         def add_func(f):
@@ -80,11 +80,7 @@ class Variable:
             gys = [output().grad for output in f.outputs]
             gxs = f.backward(*gys)
             gxs = as_tuple(gxs)
-            print(f.name +".backward(",gys,") = ",gxs)
-            if f.name == "Add":
-                print(f.name + '\'s input is :',f.inputs[0].data ,"and",f.inputs[1].data)
-            else:
-                print(f.name + '\'s input is :',f.inputs[0].data)
+            #print(f.name +".backward(",gys,") = ",gxs)
             for x,gx in zip(f.inputs,gxs):
                 if x.grad is None:
                     x.grad = gx
@@ -211,10 +207,12 @@ class Pow(Function):
     def forward(self,x):
         return x ** self.c
     
-    def backward(selg,gy):
+    def backward(self,gy):
         x = self.inputs[0].data
         c = self.c
         gx = c * x ** (c - 1) * gy
+        return gx
+
         
 def pow(x,c):
     return Pow(c)(x)
