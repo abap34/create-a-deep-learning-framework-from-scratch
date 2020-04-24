@@ -67,17 +67,21 @@ class Variable:
         if self.grad is None:
             self.grad = Variable(np.ones_like(self.data))
             #print('grad is None. create',self.grad)
+
         funcs = []
         seen = set()
+
         def add_func(f):
             if f not in seen:
                 funcs.append(f)
                 seen.add(f)
                 funcs.sort(key=lambda x : x.generation)
+        
         add_func(self.creator)
         while funcs:
             f = funcs.pop()
             gys = [output().grad for output in f.outputs]
+
             with using_config('enable_backprop',create_graph):
                 gxs = f.backward(*gys)
                 gxs = as_tuple(gxs)
@@ -89,9 +93,9 @@ class Variable:
                         x.grad = x.grad + gx
                     if x.creator is not None:        # (x.cretor is None == x が入力変数) なのでそこでストップする
                         add_func(x.creator)
-                if not retaion_grad:
-                    for y in f.outputs:
-                        y().grad = None              # メモリを解放,yは弱参照なのでアクセスには()が必要
+            if not retaion_grad:
+                for y in f.outputs:
+                    y().grad = None              # メモリを解放,yは弱参照なのでアクセスには()が必要
 
 class Function:
     def __call__(self,*inputs:Variable) -> Variable:
