@@ -2,6 +2,8 @@ import numpy as np
 import weakref
 import contextlib
 
+import dezero
+
 
 def as_array(x):
     if np.isscalar(x):
@@ -27,7 +29,7 @@ class Variable:
     def __init__(self,data,name=None):
         if data is not None:
             if not isinstance(data,np.ndarray):
-                raise TypeError ('type:',type(data),'is not supported')
+                raise TypeError ('type: '+ str(type(data)) +' is not supported')
         self.data = data       # 変数の値の格納場所
         self.name = name
         self.grad = None
@@ -56,10 +58,26 @@ class Variable:
     def dtype(self):
         return self.data.dtype
     
+    @property
+    def T(self):
+        return dezero.functions.transpose(self)
+    
+    def transpose(self):
+        return dezero.functions.transpose(self)
+    
+    
     def set_creator(self,func):
         self.creator = func
         self.generation = func.generation + 1 # 優先度
     
+    def reshape(self,*shape):
+        if len(shape) == 1 and isinstance(shape[0],(tuple,list)):
+            shape = shape[0]
+        return dezero.functions.reshape(self, shape)
+
+    def sum(self, axis=None,keepdims=False):
+        return dezero.functions.sum(self,axis,keepdims)
+
     def clearglad(self):
         self.grad = None
     
@@ -85,7 +103,6 @@ class Variable:
             with using_config('enable_backprop',create_graph):
                 gxs = f.backward(*gys)
                 gxs = as_tuple(gxs)
-                #print(f.name +".backward(",gys,") = ",gxs)
                 for x,gx in zip(f.inputs,gxs):
                     if x.grad is None:
                         x.grad = gx
@@ -96,9 +113,10 @@ class Variable:
             if not retaion_grad:
                 for y in f.outputs:
                     y().grad = None              # メモリを解放,yは弱参照なのでアクセスには()が必要
+    
 
 class Function:
-    def __call__(self,*inputs:Variable) -> Variable:
+    def __call__(self,*inputs):
         inputs = [as_variable(x) for x in inputs]
         xs = [x.data for x in inputs]
         ys = as_tuple(self.forward(*xs))
@@ -120,10 +138,15 @@ class Function:
     
 class Add(Function):
     def forward(self,x0,x1):
+        self.x0_shape, self.x1_shape = x0.shape, x1.shape
         return x0 + x1
     
     def backward(self,gy):
-        return gy,gy
+        gx0,gx1 = gy,gy
+        if self.x0_shape != self.x1_shape:
+            gx0 = dezero.functions.sum_to(gx0,self.x0_shape)
+            gx1 = dezero.functions.sum_to(gx1,self.x1_shape)
+        return gx0, gx1
 
 def add(x0,x1):
     x1 = as_array(x1)
@@ -224,20 +247,6 @@ class Config:
 
 
 
-def setup_variable():
-    Variable.__add__ = add
-    Variable.__radd__ = add
-    Variable.__sub__ = sub
-    Variable.__rsub__ = rsub
-    Variable.__neg__ = neg
-    Variable.__mul__ = mul
-    Variable.__rmul__ = mul
-    Variable.__truediv__ = div
-    Variable.__rtruediv__ = rdiv
-    Variable.__pow__ = pow
-
-
-
 @contextlib.contextmanager
 def using_config(name,value):
     old_value = getattr(Config,name)
@@ -250,3 +259,20 @@ def using_config(name,value):
 
 def no_grad():
     return using_config('enable_backprop',False)
+
+
+
+
+
+def setup_variable():
+    Variable.__add__ = add
+    Variable.__radd__ = add
+    Variable.__sub__ = sub
+    Variable.__rsub__ = rsub
+    Variable.__neg__ = neg
+    Variable.__mul__ = mul
+    Variable.__rmul__ = mul
+    Variable.__truediv__ = div
+    Variable.__rtruediv__ = rdiv
+    Variable.__pow__ = pow
+
