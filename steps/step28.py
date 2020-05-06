@@ -26,8 +26,8 @@ for i in range(iters):
 
     y = rosenbrock(x0,x1)
 
-    x0.clearglad()  
-    x1.clearglad()
+    x0.cleargrad()  
+    x1.cleargrad()
 
     y.backward()
 

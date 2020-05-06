@@ -10,7 +10,7 @@ y = x ** 2
 y.backward(create_graph=True)
 gx = x.grad
 print('gx:',gx)
-x.clearglad()
+x.cleargrad()
 print('gx2:',gx)
 
 z = gx ** 3 + y

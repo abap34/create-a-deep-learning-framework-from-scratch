@@ -17,7 +17,7 @@ logs = [y.data.flatten()]
 for i in range(3):
     logs.append(x.grad.data.flatten())
     gx = x.grad
-    x.clearglad()
+    x.cleargrad()
     gx.backward(create_graph=True)
 
 for log in logs:

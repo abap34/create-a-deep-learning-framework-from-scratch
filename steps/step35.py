@@ -18,7 +18,7 @@ iters = 5
 for i in range(iters):
     print(i)
     gx = x.grad
-    x.clearglad()
+    x.cleargrad()
     gx.backward(create_graph=True)
 
 gx = x.grad

@@ -36,8 +36,8 @@ for i in range(iters):
     y_pred = predict(x)
     loss = mean_squared_error(y,y_pred)
     
-    W.clearglad()
-    b.clearglad()
+    W.cleargrad()
+    b.cleargrad()
     loss.backward()
     
     W.data -= lr * W.grad.data
