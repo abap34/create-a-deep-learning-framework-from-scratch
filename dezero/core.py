@@ -78,7 +78,7 @@ class Variable:
     def sum(self, axis=None,keepdims=False):
         return dezero.functions.sum(self,axis,keepdims)
 
-    def clearglad(self):
+    def cleargrad(self):
         self.grad = None
     
     def backward(self,retaion_grad=False,create_graph=False):
@@ -220,7 +220,7 @@ def div(x0, x1):
 
 def rdiv(x0, x1):
     x1 = as_array(x1)
-    return Div(x1,x0)
+    return Div()(x1,x0)
 
 
 
@@ -275,4 +275,9 @@ def setup_variable():
     Variable.__truediv__ = div
     Variable.__rtruediv__ = rdiv
     Variable.__pow__ = pow
+
+
+
+class Paramater(Variable):
+    pass
 
