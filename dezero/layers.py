@@ -10,7 +10,7 @@ class Layer:
     def __init__(self):
         self._params = set()
     def __setattr__(self,name,value):
-        if isinstance(value,Paramater):
+        if isinstance(value,(Paramater,Layer)):
             self._params.add(name)
         super().__setattr__(name, value)
     def __call__(self, *inputs):
@@ -39,7 +39,6 @@ class Linear(Layer):
         self.in_size = in_size
         self.out_size = out_size
         self.dtype = dtype
-
         self.W = Paramater(None, name='w')
         if self.in_size is not None:
             self._init_W()
