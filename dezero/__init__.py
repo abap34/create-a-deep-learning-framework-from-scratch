@@ -8,5 +8,7 @@ from dezero.core import as_tuple
 from dezero.core import setup_variable
 import dezero.functions
 import dezero.utils
+from dezero.layers import Layer
+from dezero.models import Model
 
 setup_variable()
