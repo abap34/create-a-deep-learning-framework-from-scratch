@@ -10,13 +10,14 @@ import dezero
 from dezero.datasets import Spiral
 from dezero import DataLoader
 from dezero.models import MLP
+from dezero.functions import relu
 from dezero.optimizers import SGD
 from dezero.functions import softmax_cross_entropy_simple, accuracy
 
 batch_size = 10
 max_epoch = 300
 hidden_size = 10
-lr = 1.0
+lr = 0.2
 
 train = Spiral(train=True)
 test = Spiral(train=False)
@@ -25,7 +26,7 @@ train_loder = DataLoader(train, batch_size)
 test_loder = DataLoader(test, batch_size, shuffle=False)
 
 
-model = MLP((hidden_size, 10))
+model = MLP((hidden_size, 10),activation=relu)
 optimizer = SGD(lr).setup(model)
 
 train_acc = []
