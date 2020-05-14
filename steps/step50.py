@@ -52,8 +52,8 @@ for epoch in range(max_epoch):
         print('epoch :', epoch + 1)
         print('train loss: {:.4f} accuracy : {:.4f}'.format(
             sum_loss / len(train), sum_acc / len(train)))
-    train_acc.append(sum_acc)
-    train_loss.append(sum_loss)
+    train_acc.append(sum_acc / len(train))
+    train_loss.append(sum_loss / len(train))
     sum_loss, sum_acc = 0, 0
     with dezero.no_grad():
         for x, t in test_loder:
@@ -62,12 +62,13 @@ for epoch in range(max_epoch):
             acc = accuracy(y, t)
             sum_loss += float(loss.data) * len(t)
             sum_acc += float(acc.data) * len(t)
-    if epoch % 10 == 0 : print('test loss: {:.4f} accuracy : {:.4f}'.format(sum_loss / len(train), sum_acc / len(train)))
-    test_acc.append(sum_acc)
-    test_loss.append(sum_loss)
+    if epoch % 10 == 0 : print('test loss: {:.4f} accuracy : {:.4f}'.format(sum_loss / len(test), sum_acc / len(test)))
+    test_acc.append(sum_acc / len(test))
+    test_loss.append(sum_loss / len(test))
 
 plt.plot(range(max_epoch),train_acc)
 plt.plot(range(max_epoch),test_acc)
 plt.title("acc")
 plt.xlabel("epoch")
+plt.ylim(0, 1)
 plt.show()
