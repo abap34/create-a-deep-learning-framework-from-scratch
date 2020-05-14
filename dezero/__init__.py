@@ -8,6 +8,8 @@ from dezero.core import as_tuple
 from dezero.core import setup_variable
 import dezero.functions
 import dezero.utils
+import dezero.datasets
+from  dezero.dataloders import DataLoader
 from dezero.layers import Layer
 from dezero.models import Model
 
