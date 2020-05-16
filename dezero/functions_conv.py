@@ -33,10 +33,11 @@ def pooling_simple(x, kernel_size, stride=1, pad=0):
     SH, SW = pair(stride)
     OH = get_conv_outsize(H, KH, SH, PH)
     OW = get_conv_outsize(W, KW, SW, PW)
+
     col = im2col(x, kernel_size, stride, pad, to_matrix=True)
     col = col.reshape(-1, KH * KW)
     y = col.max(axis=1)     # 各行について
-    y = y.reshape(N, OH, OW, C).transpose(0, 3, 2, 1)
+    y = y.reshape(N, OH, OW, C).transpose(0, 3, 1, 2)
     return y
 
 
