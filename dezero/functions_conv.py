@@ -24,7 +24,7 @@ def conv2d_simple(x, W, b=None, stride=1, pad=0):
     return y
 
 
-def pooling_simpe(x, kernel_size, stride=1, pad=0):
+def pooling_simple(x, kernel_size, stride=1, pad=0):
     x = as_variable(x)
 
     N, C, H, W = x.shape
