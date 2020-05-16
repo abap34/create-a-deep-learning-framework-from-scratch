@@ -4,24 +4,37 @@ import os
 
 from dezero.core import Paramater
 from dezero import as_tuple
+from dezero import cuda
 import dezero.functions as F
 
 
 class Layer:
     def __init__(self):
         self._params = set()
+    
     def __setattr__(self,name,value):
         if isinstance(value,(Paramater,Layer)):
             self._params.add(name)
         super().__setattr__(name, value)
+    
     def __call__(self, *inputs):
         outputs = self.forward(*inputs)
         outputs = as_tuple(outputs)
         self.inputs = [weakref.ref(x) for x in inputs]
         self.outputs = [weakref.ref(y) for y in outputs]
         return outputs if len(outputs) > 1 else outputs[0]
+    
+    def to_cpu(self):
+        for param in self.params():
+            param.to_cpu()
+
+    def to_gpu(self):
+        for param in self.params():
+            param.to_gpu()
+
     def forward(self, inputs):
         raise NotImplementedError()
+    
     def params(self):
         for name in self._params:
             obj = self.__dict__[name]
@@ -29,12 +42,14 @@ class Layer:
                 yield from obj.params()
             else:
                 yield obj
+                
     def cleargrads(self):
         for param in self.params():
             param.cleargrad()
 
     def save_weight(self,path):
-        
+        self.to_cpu()  
+
         params_dict = {}
         self._flatten_params(params_dict)
         array_dict = {key: param.data for key, param in params_dict.items() if param is not None}
@@ -80,7 +95,7 @@ class Linear(Layer):
         else:
             self.b = Paramater(np.zeros(out_size, dtype=dtype),name='b')
 
-    def _init_W(self):
+    def _init_W(self, xp=np):
         I, O = self.in_size, self.out_size
         W_data = np.random.randn(I, O).astype(self.dtype) * np.sqrt(1 / I)
         self.W.data = W_data
@@ -88,7 +103,9 @@ class Linear(Layer):
     def  forward(self , x):
         if self.W.data is None:
             self.in_size = x.shape[1]
-            self._init_W()
+            xp = cuda.get_array_module(x)
+            self._init_W(xp)
         
         y = F.linear(x, self.W, self.b)
         return y
+

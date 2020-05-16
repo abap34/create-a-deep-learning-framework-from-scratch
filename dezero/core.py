@@ -4,10 +4,16 @@ import contextlib
 
 import dezero
 
+try:
+    import cupy
+    array_types = (np.ndarray, cupy.ndarray)
+except ImportError:
+    array_types = (np.ndarray)
 
-def as_array(x):
+
+def as_array(x, array_module=np):
     if np.isscalar(x):
-        return np.array(x)
+        return array_module.array(x)
     return x
 
 
@@ -24,11 +30,12 @@ def as_variable(obj):
         return obj
     return Variable(obj)
 
+
 class Variable:
     __array_priotity__ = 200        # 演算子の優先度
     def __init__(self,data,name=None):
         if data is not None:
-            if not isinstance(data,np.ndarray):
+            if not isinstance(data, array_types):
                 raise TypeError ('type: '+ str(type(data)) +' is not supported')
         self.data = data       # 変数の値の格納場所
         self.name = name
@@ -45,6 +52,14 @@ class Variable:
         p = str(self.data).replace('\n', '\n' + ' ' * 9)
         return 'variable(' + p + ')'
     
+    def to_cpu(self):
+        if self.data is not None:
+            self.data = dezero.cuda.as_numpy(self.data)
+    
+    def to_gpu(self):
+        if self.data is not None:
+            self.data = dezero.cuda.as_cupy(self.data)
+        
 
     @property
     def shape(self):
@@ -83,8 +98,8 @@ class Variable:
     
     def backward(self,retaion_grad=False,create_graph=False):
         if self.grad is None:
-            self.grad = Variable(np.ones_like(self.data))
-            #print('grad is None. create',self.grad)
+            xp = dezero.cuda.get_array_module(self.data)
+            self.grad = Variable(xp.ones_like(self.data))
 
         funcs = []
         seen = set()
@@ -149,7 +164,7 @@ class Add(Function):
         return gx0, gx1
 
 def add(x0,x1):
-    x1 = as_array(x1)
+    x1 = as_array(x1, dezero.cuda.get_array_module(x0.data))
     return Add()(x0,x1)
 
 
@@ -163,12 +178,12 @@ class Sub(Function):
         return gy, -gy
     
 def sub(x0,x1):
-    x1 = as_array(x1)
+    x1 = as_array(x1, dezero.cuda.get_array_module(x0.data))
     return Sub()(x0,x1)
 
 
 def rsub(x0,x1):           
-    x1 = as_array(x1)
+    x1 = as_array(x1, dezero.cuda.get_array_module(x0.data))
     return Sub()(x1,x0)
 
 
@@ -197,7 +212,7 @@ class Mul(Function):
         return gy * x1, gy * x0
     
 def mul(x0,x1):
-    x1 = as_array(x1)
+    x1 = as_array(x1, dezero.cuda.get_array_module(x0.data))
     return Mul()(x0,x1)
 
 
@@ -215,11 +230,11 @@ class Div(Function):
     
     
 def div(x0, x1):
-    x1 = as_array(x1)
+    x1 = as_array(x1, dezero.cuda.get_array_module(x0.data))
     return Div()(x0, x1)
 
 def rdiv(x0, x1):
-    x1 = as_array(x1)
+    x1 = as_array(x1, dezero.cuda.get_array_module(x0.data))
     return Div()(x1,x0)
 
 
