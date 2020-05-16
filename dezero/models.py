@@ -1,3 +1,4 @@
+import numpy as np
 from dezero import Layer
 from dezero import utils
 import dezero.layers as L
@@ -31,25 +32,31 @@ class VGG16(Model):
     def __init__(self, pretrained=False):
         
         super().__init__()
-        if pretrained:
-            weights_path = utils.get_file(VGG16.WEIGTHS_PATH)
-            self.load_weights(weights_path)
         self.conv1_1 = L.Conv2d(64, kernel_size=3, stride=1, pad=1)
         self.conv1_2 = L.Conv2d(64, kernel_size=3, stride=1, pad=1)
+
         self.conv2_1 = L.Conv2d(128, kernel_size=3, stride=1, pad=1)
         self.conv2_2 = L.Conv2d(128, kernel_size=3, stride=1, pad=1)
+        
         self.conv3_1 = L.Conv2d(256, kernel_size=3, stride=1, pad=1)
         self.conv3_2 = L.Conv2d(256, kernel_size=3, stride=1, pad=1)
         self.conv3_3 = L.Conv2d(256, kernel_size=3, stride=1, pad=1)
+
         self.conv4_1 = L.Conv2d(512, kernel_size=3, stride=1, pad=1)
         self.conv4_2 = L.Conv2d(512, kernel_size=3, stride=1, pad=1)
         self.conv4_3 = L.Conv2d(512, kernel_size=3, stride=1, pad=1)
+
         self.conv5_1 = L.Conv2d(512, kernel_size=3, stride=1, pad=1)
         self.conv5_2 = L.Conv2d(512, kernel_size=3, stride=1, pad=1)
         self.conv5_3 = L.Conv2d(512, kernel_size=3, stride=1, pad=1)
+
         self.fc6 = L.Linear(4096)
         self.fc7 = L.Linear(4096)
         self.fc8 = L.Linear(1000)
+        
+        if pretrained:
+            weights_path = utils.get_file(VGG16.WEIGTHS_PATH)
+            self.load_weights(weights_path)
 
     def forward(self, x):
         x = F.relu(self.conv1_1(x))
@@ -75,3 +82,14 @@ class VGG16(Model):
         x = F.dropout(F.relu(self.fc7(x)))
         x = self.fc8(x)
         return x
+
+    @staticmethod                               # 訓練時と同じ処理
+    def preprocess(image, size=(224, 224), dtype=np.float32):
+        image = image.convert('RGB')
+        if size:
+            image = image.resize(size)
+        image = np.asarray(image, dtype=dtype)
+        image = image[:, :, ::-1]
+        image -= np.array([103.939, 116.779, 123.68], dtype=dtype)
+        image = image.transpose((2, 0, 1))
+        return image
