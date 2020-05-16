@@ -74,10 +74,10 @@ class Layer:
             obj = self.__dict__[name]
             key = parent_key + '/' + name if parent_key else name
         
-        if isinstance(obj, Layer):
-            obj.__flatten_params(params_dict, key)
-        else:
-            params_dict[key] = obj
+            if isinstance(obj, Layer):
+                obj.__flatten_params(params_dict, key)
+            else:
+                params_dict[key] = obj
 
 
 class Linear(Layer):
@@ -130,20 +130,19 @@ class Conv2d(Layer):
         else:
             self.b = Paramater(np.zeros(out_channels, dtype=dtype), name='b')
 
-        def _init_W(self, xp=np):
-            C, OC = self.in_channels, self.out_channels
-            KH, KW = pair(self.kernel_size)
-            scale = np.sqrt(1 / (C * KH * KW))
-            W_data = xp.random.randn(OC, C, KH, KW).astype(self.dtype) * scale
-            self.W.data = W_data
+    def _init_W(self, xp=np):
+        C, OC = self.in_channels, self.out_channels
+        KH, KW = pair(self.kernel_size)
+        scale = np.sqrt(1 / (C * KH * KW))
+        W_data = xp.random.randn(OC, C, KH, KW).astype(self.dtype) * scale
+        self.W.data = W_data
         
-        def forward(self, x):
-            if self.W.data is None:
-                self.in_channels_x.shape[1]
-                xp = cuda.get_array_module(x)
-                self._init_W(xp)
+    def forward(self, x):
+        if self.W.data is None:
+            self.in_channels = x.shape[1]
+            xp = cuda.get_array_module(x)
+            self._init_W(xp)
 
-            y = F.conv2d_simple(x, self.W, self.b, self.stride, self.pad)
-            return y
+        y = F.conv2d_simple(x, self.W, self.b, self.stride, self.pad)
+        return y
 
-        
