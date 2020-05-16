@@ -11,10 +11,11 @@ from dezero.utils import pair
 class Layer:
     def __init__(self):
         self._params = set()
-    
+
     def __setattr__(self,name,value):
         if isinstance(value,(Paramater,Layer)):
             self._params.add(name)
+
         super().__setattr__(name, value)
     
     def __call__(self, *inputs):
@@ -47,6 +48,16 @@ class Layer:
         for param in self.params():
             param.cleargrad()
 
+    def _flatten_params(self, params_dict, parent_key=""):
+        for name in self._params:
+            obj = self.__dict__[name]
+            key = parent_key + '/' + name if parent_key else name
+            if isinstance(obj, Layer):
+                obj._flatten_params(params_dict, key)
+            else:
+                params_dict[key] = obj
+
+
     def save_weight(self,path):
         self.to_cpu()  
 
@@ -66,19 +77,7 @@ class Layer:
         params_dict = {}
         self._flatten_params(params_dict)
         for key, param in params_dict.items():
-            param.data = npz(key)
-
-
-    def _flatten_params(self, params_dict, parent_key=" "):
-        for name in self._params:
-            obj = self.__dict__[name]
-            key = parent_key + '/' + name if parent_key else name
-        
-            if isinstance(obj, Layer):
-                obj.__flatten_params(params_dict, key)
-            else:
-                params_dict[key] = obj
-
+            param.data = npz[key]
 
 class Linear(Layer):
     def __init__(self, out_size, nobias=False, dtype=np.float32, in_size=None):
