@@ -20,7 +20,7 @@ l2 = L.Linear(1)
 
 def predict(x):
     y = l1(x)
-    y = F.sigmoid_simple(y)
+    y = F.sigmoid(y)
     y = l2(y)
     return y
 
