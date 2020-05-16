@@ -122,17 +122,25 @@ def reshape(x, shape):
 
 
 class Transpose(Function):
+    def __init__(self, axes=None):
+        self.axes = axes
+
     def forward(self, x):
-        xp = cuda.get_array_module(x)
-        y = xp.transpose(x)
+        y = x.transpose(self.axes)
         return y
 
     def backward(self, gy):
-        return transpose(gy)
+        xp = cuda.get_array_module(gy)
+        if self.axes is None:
+            return transpose(gy)
+
+        axes_len = len(self.axes)
+        inv_axes = tuple(xp.argsort([ax % axes_len for ax in self.axes]))
+        return transpose(gy, inv_axes)
 
 
-def transpose(x):
-    return Transpose()(x)
+def transpose(x, axes=None):
+    return Transpose(axes)(x)
 
 
 class BroadcastTo(Function):
@@ -235,10 +243,21 @@ def linear(x, W, b=None):
     return Linear()(x, W, b)
 
 
-def sigmoid_simple(x):
-    x = as_variable(x)
-    y = 1 / (1 + exp(-x))
-    return y
+class Sigmoid(Function):
+    def forward(self, x):
+        xp = cuda.get_array_module(x)
+        y = 1 / (1 + xp.exp(-x))
+        return y
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+        gx = gy * y * (1 - y)
+        return gx
+
+
+def sigmoid(x):
+    return Sigmoid()(x)
+
 
 
 class ReLU(Function):
@@ -348,3 +367,10 @@ def dropout(x, dropout_ratio=0.5):
 
     else:
         return x
+
+
+
+# 先に定義しておかないとimportできないので末尾に追加
+from dezero.functions_conv import conv2d_simple
+from dezero.functions_conv import im2col
+from dezero.functions_conv import col2im
