@@ -1,11 +1,47 @@
 import os
 import subprocess
+import urllib.request
 import numpy as np
 
 from dezero import Variable
 from dezero import Function
 
+cache_dir = os.path.join(os.path.expanduser('~'), '.dezero')
 
+
+def show_progress(block_num, block_size, total_size):
+    bar_template = "\r[{}] {:.2f}%"
+
+    downloaded = block_num * block_size
+    p = downloaded / total_size * 100
+    i = int(downloaded / total_size * 30)
+    if p >= 100.0:
+        p = 100.0
+    if i >= 30:
+        i = 30
+    bar = "#" * i + "." * (30 - i)
+    print(bar_template.format(bar, p), end='')
+
+def get_file(url, file_name=None):
+    if file_name is None:
+        file_name = url[url.rfind('/') + 1:]
+    file_path = os.path.join(cache_dir, file_name)
+
+    if not os.path.exists(cache_dir):
+        os.mkdir(cache_dir)
+
+    if os.path.exists(file_path):
+        return file_path
+
+    print("Downloading: " + file_name)
+    try:
+        urllib.request.urlretrieve(url, file_path, show_progress)
+    except (Exception, KeyboardInterrupt) as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise
+    print(" Done")
+    return file_path
 
 def _dot_var(v:Variable,verbose=False):
     dot_var = '{} [label="{}", color=orange, style=filled]\n'
@@ -109,7 +145,16 @@ def reshape_sum_backward(gy, x_shape, axis, keepdims):
     return gy
 
 
+def max_backward_shape(x, axis):
+    if axis is None:
+        axis = range(x.ndim)
+    elif isinstance(axis, int):
+        axis = (axis,)
+    else:
+        axis = axis
 
+    shape = [s if ax not in axis else 1 for ax, s in enumerate(x.shape)]
+    return shape
 
 
 def pair(x):
