@@ -12,7 +12,6 @@ class DataLoader:
         self.max_iter = math.ceil(self.data_size / batch_size)
         self.gpu = gpu
         self.reset()
-
     def reset(self):
         self.iteration = 0
         if self.shuffle:
@@ -50,3 +49,24 @@ class DataLoader:
         
 
         
+
+class SeqDataLoader(DataLoader):
+    def __init__(self, dataset, batch_size,gpu=False):
+        super().__init__(dataset=dataset, batch_size=batch_size,shuffle=False,gpu=gpu)
+    
+    def __next__(self):
+
+        if self.iteration >= self.max_iter:
+            self.reset()
+            raise StopIteration
+
+        jump = self.data_size // self.batch_size
+        batch_idx = [(i * jump + self.iteration) % self.data_size for i in range(self.batch_size)]
+        batch = [self.dataset[i] for i in batch_idx]
+
+        xp = cuda.cupy if self.gpu else np
+        x = xp.array([example[0] for example in batch])
+        t = xp.array([example[1] for example in batch])
+
+        self.iteration += 1
+        return x, t
